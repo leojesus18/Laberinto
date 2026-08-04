@@ -38,9 +38,21 @@ for fila in range(len(nivel1)):
 # ==========================
 cazador = Cazador(cazador_x, cazador_y)
 
+
+# ==========================
+# POSICIONES INICIALES
+# ==========================
+
+jugador_inicio_x = jugador_x
+jugador_inicio_y = jugador_y
+cazador_inicio_x = cazador_x
+cazador_inicio_y = cazador_y
+
 contador = 0
 
 ejecutando = True
+
+game_over = False
 
 while ejecutando:
 
@@ -56,6 +68,23 @@ while ejecutando:
 
         if evento.type == pygame.QUIT:
             ejecutando = False
+            
+        if game_over:
+
+            if evento.key == pygame.K_RETURN:
+                jugador_x = jugador_inicio_x
+                jugador_y = jugador_inicio_y
+
+                cazador.reiniciar(
+                    cazador_inicio_x,
+                    cazador_inicio_y
+                )
+
+                game_over = False
+            elif evento.key == pygame.K_ESCAPE:
+                ejecutando = False
+
+            continue    
 
         if evento.type == pygame.KEYDOWN:
 
@@ -103,9 +132,7 @@ while ejecutando:
 
     if cazador.atrapo_jugador(jugador_x, jugador_y):
 
-        print("GAME OVER")
-
-        ejecutando = False
+        game_over = True
 
     # ==========================
     # DIBUJAR
@@ -147,6 +174,41 @@ while ejecutando:
 
     # Cazador
     cazador.dibujar(pantalla)
+
+
+    if game_over:
+
+        fuente = pygame.font.SysFont(None, 50)
+
+        texto = fuente.render(
+            "GAME OVER",
+            True,
+            ROJO
+        )
+
+        pantalla.blit(
+            texto,
+            (
+                ANCHO // 2 - texto.get_width() // 2,
+                ALTO // 2 - 50
+            )
+        )
+
+        fuente2 = pygame.font.SysFont(None, 30)
+
+        texto2 = fuente2.render(
+            "ENTER para reiniciar",
+            True,
+            BLANCO
+        )
+
+        pantalla.blit(
+            texto2,
+            (
+                ANCHO // 2 - texto2.get_width() // 2,
+                ALTO // 2 + 10
+            )
+        )
 
     pygame.display.flip()
 
