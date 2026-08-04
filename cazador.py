@@ -139,9 +139,4 @@ class Cazador:
         return camino
     
     
-    def reiniciar(self, x, y):
-
-        self.x = x
-        self.y = y
-
-        self.contador = 0
+    

@@ -10,7 +10,7 @@ class EstadoJugando(Estado):
 
     def __init__(self, manejador_estados):
         super().__init__(manejador_estados)
-        self.mapa = nivel1
+        self.mapa = [fila[:] for fila in nivel1]
 
         jugador_x, jugador_y, cazador_x, cazador_y = self._buscar_posiciones_iniciales()
 
