@@ -1,5 +1,6 @@
 import pygame
 import sys
+from cazador import Cazador
 
 from constantes import *
 from niveles import nivel1
@@ -33,8 +34,9 @@ for fila in range(len(nivel1)):
             cazador_y = fila
 
 # ==========================
-# VARIABLES
+# CREAR OBJETO CAZADOR
 # ==========================
+cazador = Cazador(cazador_x, cazador_y)
 
 contador = 0
 
@@ -89,38 +91,17 @@ while ejecutando:
                     if nivel1[jugador_y][jugador_x] == "S":
                         print("¡Nivel completado!")
 
-    # ==========================
-    # IA DEL CAZADOR
-    # ==========================
-
-    if contador >= 20:
-
-        contador = 0
-
-        nuevo_x = cazador_x
-        nuevo_y = cazador_y
-
-        if jugador_x > cazador_x:
-            nuevo_x += 1
-
-        elif jugador_x < cazador_x:
-            nuevo_x -= 1
-
-        elif jugador_y > cazador_y:
-            nuevo_y += 1
-
-        elif jugador_y < cazador_y:
-            nuevo_y -= 1
-
-        if nivel1[nuevo_y][nuevo_x] != "#":
-            cazador_x = nuevo_x
-            cazador_y = nuevo_y
+    cazador.mover(
+    nivel1,
+    jugador_x,
+    jugador_y
+    )
 
     # ==========================
     # GAME OVER
     # ==========================
 
-    if jugador_x == cazador_x and jugador_y == cazador_y:
+    if cazador.atrapo_jugador(jugador_x, jugador_y):
 
         print("GAME OVER")
 
@@ -165,15 +146,7 @@ while ejecutando:
     )
 
     # Cazador
-    pygame.draw.circle(
-        pantalla,
-        ROJO,
-        (
-            cazador_x * TAM_CASILLA + TAM_CASILLA // 2,
-            cazador_y * TAM_CASILLA + TAM_CASILLA // 2
-        ),
-        TAM_CASILLA // 3
-    )
+    cazador.dibujar(pantalla)
 
     pygame.display.flip()
 
