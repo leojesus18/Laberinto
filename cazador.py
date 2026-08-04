@@ -1,8 +1,7 @@
 import pygame
 from constantes import *
 from collections import deque
-
-
+from patterns.singleton.configuracion import Configuracion
 from constantes import *
 
 class Cazador:
@@ -11,18 +10,25 @@ class Cazador:
 
         self.x = x
         self.y = y
-
         self.color = ROJO
-
         self.contador = 0
 
+        config = Configuracion()
+
+        #El cazador se mueve mas rapido cuando las dificualtades son altas
+        velocidades ={
+            "facil":30,
+            "normal":20,
+            "dificil":10
+        }
+
+        self.frames_por_movimiento = velocidades.get(config.dificultad, 20)
 
     def mover(self, mapa, jugador_x, jugador_y):
 
         self.contador += 1
 
-    # El cazador se mueve cada 20 frames
-        if self.contador < 20:
+        if self.contador < self.frames_por_movimiento:
             return
 
         self.contador = 0
