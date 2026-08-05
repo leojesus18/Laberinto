@@ -10,12 +10,13 @@ class EstadoJugando(Estado):
 
     def __init__(self, manejador_estados):
         super().__init__(manejador_estados)
-        self.mapa = [fila[:] for fila in nivel1]
+        self.mapa = nivel1
 
         jugador_x, jugador_y, cazador_x, cazador_y = self._buscar_posiciones_iniciales()
 
         self.jugador = Jugador(jugador_x, jugador_y)
         self.cazador = Cazador(cazador_x, cazador_y)
+        self.tiempo_inicio=pygame.time.get_ticks()
 
     def _buscar_posiciones_iniciales(self):
         jugador_x = jugador_y = 0
@@ -55,9 +56,11 @@ class EstadoJugando(Estado):
                     self.jugador.mover(self.mapa, dx, dy)
 
                     if self.jugador.llego_a_salida(self.mapa):
+                        tiempo_transcurrido = (pygame.time.get_ticks() - self.tiempo_inicio) / 1000
+
                         from patterns.state.estado_victoria import EstadoVictoria
                         self.manejador_estados.cambiar_estado(
-                            EstadoVictoria(self.manejador_estados)
+                            EstadoVictoria(self.manejador_estados, tiempo_transcurrido)
                         )
 
     def actualizar(self):

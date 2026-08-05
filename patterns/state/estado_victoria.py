@@ -1,14 +1,28 @@
 import pygame
 from patterns.state.estado import Estado
+from database.score_repository import ScoreRepository
+from patterns.singleton.configuracion import Configuracion
 from constantes import *
 
 
 class EstadoVictoria(Estado):
 
-    def __init__(self, manejador_estados):
+    def __init__(self, manejador_estados, tiempo_segundos):
         super().__init__(manejador_estados)
+        self.tiempo_segundos = tiempo_segundos
         self.fuente = pygame.font.SysFont(None, 64)
         self.fuente_texto = pygame.font.SysFont(None, 28)
+
+        self._guardar_puntaje()
+
+    def _guardar_puntaje(self):
+        config = Configuracion()
+        repositorio = ScoreRepository()
+        repositorio.guardar_puntaje(
+            nombre_jugador="Jugador",
+            tiempo_segundos=self.tiempo_segundos,
+            dificultad=config.dificultad
+        )
 
     def manejar_eventos(self, eventos):
         for evento in eventos:
@@ -26,7 +40,12 @@ class EstadoVictoria(Estado):
         pantalla.fill(NEGRO)
 
         texto = self.fuente.render("¡GANASTE!", True, VERDE)
-        pantalla.blit(texto, (ANCHO // 2 - texto.get_width() // 2, ALTO // 2 - 50))
+        pantalla.blit(texto, (ANCHO // 2 - texto.get_width() // 2, ALTO // 2 - 70))
+
+        texto_tiempo = self.fuente_texto.render(
+            f"Tiempo: {self.tiempo_segundos:.1f} segundos", True, BLANCO
+        )
+        pantalla.blit(texto_tiempo, (ANCHO // 2 - texto_tiempo.get_width() // 2, ALTO // 2 - 10))
 
         texto2 = self.fuente_texto.render("Presioná ENTER para volver al menú", True, BLANCO)
-        pantalla.blit(texto2, (ANCHO // 2 - texto2.get_width() // 2, ALTO // 2 + 20))
+        pantalla.blit(texto2, (ANCHO // 2 - texto2.get_width() // 2, ALTO // 2 + 30))
