@@ -10,6 +10,10 @@ class EstadoMenu(Estado):
         self.fuente_titulo = pygame.font.SysFont(None, 64)
         self.fuente_texto = pygame.font.SysFont(None, 32)
 
+        from patterns.singleton.sound_manager import SoundManager
+        sonido = SoundManager()
+        sonido.reproducir_musica(sonido.musica_menu)
+
     def manejar_eventos(self, eventos):
         for evento in eventos:
             if evento.type == pygame.KEYDOWN:
