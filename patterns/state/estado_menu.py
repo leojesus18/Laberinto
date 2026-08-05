@@ -14,10 +14,13 @@ class EstadoMenu(Estado):
         for evento in eventos:
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_RETURN:
+                    from audio.gestor_sonido import GestorSonido
+                    GestorSonido().reproducir_confirmar()
+
                     # Import acá adentro para evitar import circular
-                    from patterns.state.estado_jugando import EstadoJugando
+                    from patterns.state.estado_dificultad import EstadoDificultad
                     self.manejador_estados.cambiar_estado(
-                        EstadoJugando(self.manejador_estados)
+                        EstadoDificultad(self.manejador_estados)
                     )
 
     def actualizar(self):

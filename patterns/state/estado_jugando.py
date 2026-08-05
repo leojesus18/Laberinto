@@ -4,6 +4,7 @@ from jugador import Jugador
 from cazador import Cazador
 from constantes import *
 from niveles import nivel1
+from audio.gestor_sonido import GestorSonido
 
 
 class EstadoJugando(Estado):
@@ -68,6 +69,7 @@ class EstadoJugando(Estado):
         self.cazador.mover(self.mapa, self.jugador.x, self.jugador.y)
 
         if self.cazador.atrapo_jugador(self.jugador.x, self.jugador.y):
+            GestorSonido().reproducir_atrapado()
             self.vidas -= 1
 
             if self.vidas <= 0:
