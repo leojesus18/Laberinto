@@ -16,6 +16,11 @@ class EstadoVictoria(Estado):
 
         GestorSonido().reproducir_victoria()
         self._guardar_puntaje()
+        
+        from patterns.singleton.sound_manager import SoundManager
+        sonido = SoundManager()
+        sonido.detener_musica()
+        sonido.reproducir_sonido(sonido.sonido_victoria)
 
     def _guardar_puntaje(self):
         config = Configuracion()

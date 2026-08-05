@@ -10,6 +10,11 @@ class EstadoGameOver(Estado):
         super().__init__(manejador_estados)
         self.fuente = pygame.font.SysFont(None, 64)
         self.fuente_texto = pygame.font.SysFont(None, 28)
+        from patterns.singleton.sound_manager import SoundManager
+        sonido = SoundManager()
+        sonido.detener_musica()
+        sonido.reproducir_sonido(sonido.sonido_gameover)
+        
 
         GestorSonido().reproducir_gameover()
 

@@ -4,7 +4,6 @@ from jugador import Jugador
 from cazador import Cazador
 from constantes import *
 from niveles import nivel1
-from audio.gestor_sonido import GestorSonido
 
 
 class EstadoJugando(Estado):
@@ -19,6 +18,10 @@ class EstadoJugando(Estado):
         self.cazador = Cazador(cazador_x, cazador_y)
         self.tiempo_inicio=pygame.time.get_ticks()
         self.vidas=3
+
+        from patterns.singleton.sound_manager import SoundManager
+        self.sonido = SoundManager()
+        self.sonido.reproducir_musica(self.sonido.musica_juego)
 
     def _buscar_posiciones_iniciales(self):
         jugador_x = jugador_y = 0
@@ -56,6 +59,7 @@ class EstadoJugando(Estado):
 
                 if dx != 0 or dy != 0:
                     self.jugador.mover(self.mapa, dx, dy)
+                    self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
 
                     if self.jugador.llego_a_salida(self.mapa):
                         tiempo_transcurrido = (pygame.time.get_ticks() - self.tiempo_inicio) / 1000
@@ -69,7 +73,7 @@ class EstadoJugando(Estado):
         self.cazador.mover(self.mapa, self.jugador.x, self.jugador.y)
 
         if self.cazador.atrapo_jugador(self.jugador.x, self.jugador.y):
-            GestorSonido().reproducir_atrapado()
+            self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_cazador)
             self.vidas -= 1
 
             if self.vidas <= 0:
@@ -78,7 +82,6 @@ class EstadoJugando(Estado):
                     EstadoGameOver(self.manejador_estados)
                 )
             else:
-                # Todavía tiene vidas: reaparece en la posición inicial
                 jugador_x, jugador_y, cazador_x, cazador_y = self._buscar_posiciones_iniciales()
                 self.jugador.x = jugador_x
                 self.jugador.y = jugador_y
