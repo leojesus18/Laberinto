@@ -18,6 +18,11 @@ class EstadoGameOver(Estado):
                     self.manejador_estados.cambiar_estado(
                         EstadoMenu(self.manejador_estados)
                     )
+                elif evento.key == pygame.K_r:
+                    from patterns.state.estado_jugando import EstadoJugando
+                    self.manejador_estados.cambiar_estado(
+                        EstadoJugando(self.manejador_estados)
+                    )
 
     def actualizar(self):
         pass
@@ -28,5 +33,5 @@ class EstadoGameOver(Estado):
         texto = self.fuente.render("GAME OVER", True, ROJO)
         pantalla.blit(texto, (ANCHO // 2 - texto.get_width() // 2, ALTO // 2 - 50))
 
-        texto2 = self.fuente_texto.render("Presioná ENTER para volver al menú", True, BLANCO)
+        texto2 = self.fuente_texto.render("R para reintentar / ENTER para volver al menú", True, BLANCO)
         pantalla.blit(texto2, (ANCHO // 2 - texto2.get_width() // 2, ALTO // 2 + 20))

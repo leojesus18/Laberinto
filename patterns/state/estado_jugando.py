@@ -17,6 +17,7 @@ class EstadoJugando(Estado):
         self.jugador = Jugador(jugador_x, jugador_y)
         self.cazador = Cazador(cazador_x, cazador_y)
         self.tiempo_inicio=pygame.time.get_ticks()
+        self.vidas=3
 
     def _buscar_posiciones_iniciales(self):
         jugador_x = jugador_y = 0
@@ -67,10 +68,20 @@ class EstadoJugando(Estado):
         self.cazador.mover(self.mapa, self.jugador.x, self.jugador.y)
 
         if self.cazador.atrapo_jugador(self.jugador.x, self.jugador.y):
-            from patterns.state.estado_gameover import EstadoGameOver
-            self.manejador_estados.cambiar_estado(
-                EstadoGameOver(self.manejador_estados)
-            )
+            self.vidas -= 1
+
+            if self.vidas <= 0:
+                from patterns.state.estado_gameover import EstadoGameOver
+                self.manejador_estados.cambiar_estado(
+                    EstadoGameOver(self.manejador_estados)
+                )
+            else:
+                # Todavía tiene vidas: reaparece en la posición inicial
+                jugador_x, jugador_y, cazador_x, cazador_y = self._buscar_posiciones_iniciales()
+                self.jugador.x = jugador_x
+                self.jugador.y = jugador_y
+                self.cazador.x = cazador_x
+                self.cazador.y = cazador_y
 
     def dibujar(self, pantalla):
         pantalla.fill(NEGRO)
@@ -95,3 +106,6 @@ class EstadoJugando(Estado):
 
         self.jugador.dibujar(pantalla)
         self.cazador.dibujar(pantalla)
+        fuente_hud = pygame.font.SysFont(None, 28)
+        texto_vidas = fuente_hud.render(f"Vidas: {self.vidas}", True, BLANCO)
+        pantalla.blit(texto_vidas, (10, 10))
