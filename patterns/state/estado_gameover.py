@@ -1,5 +1,6 @@
 import pygame
 from patterns.state.estado import Estado
+from audio.gestor_sonido import GestorSonido
 from constantes import *
 
 
@@ -9,6 +10,8 @@ class EstadoGameOver(Estado):
         super().__init__(manejador_estados)
         self.fuente = pygame.font.SysFont(None, 64)
         self.fuente_texto = pygame.font.SysFont(None, 28)
+
+        GestorSonido().reproducir_gameover()
 
     def manejar_eventos(self, eventos):
         for evento in eventos:
