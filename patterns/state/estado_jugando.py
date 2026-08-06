@@ -4,18 +4,23 @@ from jugador import Jugador
 from cazador import Cazador
 from constantes import *
 from niveles import nivel1
+from patterns.factory.item_factory import generar_items_desde_mapa
 
 
 class EstadoJugando(Estado):
 
     def __init__(self, manejador_estados):
         super().__init__(manejador_estados)
-        self.mapa = nivel1
+        # list(nivel1) copia la lista de filas: así, si el jugador abre
+        # una compuerta, se modifica esta copia y no el mapa original de
+        # niveles.py (que se reutilizaría "roto" en la próxima partida).
+        self.mapa = list(nivel1)
 
         jugador_x, jugador_y, cazador_x, cazador_y = self._buscar_posiciones_iniciales()
 
         self.jugador = Jugador(jugador_x, jugador_y)
         self.cazador = Cazador(cazador_x, cazador_y)
+        self.items = generar_items_desde_mapa(self.mapa)
         self.tiempo_inicio=pygame.time.get_ticks()
         self.vidas=3
 
@@ -60,6 +65,7 @@ class EstadoJugando(Estado):
                 if dx != 0 or dy != 0:
                     self.jugador.mover(self.mapa, dx, dy)
                     self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
+                    self._recolectar_item_si_corresponde()
 
                     if self.jugador.llego_a_salida(self.mapa):
                         tiempo_transcurrido = (pygame.time.get_ticks() - self.tiempo_inicio) / 1000
@@ -69,12 +75,26 @@ class EstadoJugando(Estado):
                             EstadoVictoria(self.manejador_estados, tiempo_transcurrido)
                         )
 
+    def _recolectar_item_si_corresponde(self):
+        for item in self.items:
+            if item.recolectado:
+                continue
+
+            if item.x == self.jugador.x and item.y == self.jugador.y:
+                item.aplicar_efecto(self.jugador)
+                item.recolectado = True
+                self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
+
     def actualizar(self):
         self.cazador.mover(self.mapa, self.jugador.x, self.jugador.y)
 
         if self.cazador.atrapo_jugador(self.jugador.x, self.jugador.y):
             self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_cazador)
-            self.vidas -= 1
+
+            pierde_vida = self.jugador.recibir_golpe()  # False si un escudo absorbió el golpe
+
+            if pierde_vida:
+                self.vidas -= 1
 
             if self.vidas <= 0:
                 from patterns.state.estado_gameover import EstadoGameOver
@@ -106,11 +126,19 @@ class EstadoJugando(Estado):
                     pygame.draw.rect(pantalla, GRIS, rect)
                 elif caracter == "S":
                     pygame.draw.rect(pantalla, VERDE, rect)
+                elif caracter == "D":
+                    pygame.draw.rect(pantalla, MARRON_OSCURO, rect)
                 else:
                     pygame.draw.rect(pantalla, BLANCO, rect)
+
+        for item in self.items:
+            item.dibujar(pantalla)
 
         self.jugador.dibujar(pantalla)
         self.cazador.dibujar(pantalla)
         fuente_hud = pygame.font.SysFont(None, 28)
-        texto_vidas = fuente_hud.render(f"Vidas: {self.vidas}", True, BLANCO)
-        pantalla.blit(texto_vidas, (10, 10))
+        texto_hud = fuente_hud.render(
+            f"Vidas: {self.vidas}   Escudos: {self.jugador.escudos}   Llaves: {self.jugador.llaves}",
+            True, BLANCO
+        )
+        pantalla.blit(texto_hud, (10, 10))
