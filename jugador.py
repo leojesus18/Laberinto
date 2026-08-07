@@ -4,27 +4,20 @@ from constantes import *
 
 class Jugador:
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, estadisticas):
         self.x = x
         self.y = y
         self.color = AZUL
 
-        # Estado que van completando los ítems del Factory Method
-        # (ver patterns/factory/). Anto va a envolver estos efectos
-        # con Decorator más adelante; por ahora quedan acá como estado
-        # simple para que el sistema de ítems funcione de punta a punta.
-        self.escudos = 0
-        self.llaves = 0
-        self._efectos_activos = {}  # nombre -> tiempo_fin_ms
-        # Arranca en True para que, al activar lentitud, el PRIMER
-        # movimiento se registre y el segundo se ignore (no al revés).
+        
+        self.estadisticas = estadisticas
+
+        self._efectos_activos = {}  
+        
         self._ignorar_proximo_movimiento = True
 
     def mover(self, mapa, dx, dy):
-        """Intenta mover al jugador dx, dy casillas. Respeta paredes,
-        compuertas cerradas y bordes del mapa. Tiene en cuenta los
-        efectos temporales activos (velocidad, lentitud, invertido)."""
-
+        
         if self._tiene_efecto("invertido"):
             dx, dy = -dx, -dy
 
@@ -42,7 +35,7 @@ class Jugador:
 
     def _mover_una_casilla(self, mapa, dx, dy):
         """Mueve una sola casilla si es posible. Devuelve True si se
-        movió (útil para el buff de velocidad, que encadena 2 pasos)."""
+        movió """
 
         nuevo_x = self.x + dx
         nuevo_y = self.y + dy
@@ -57,10 +50,8 @@ class Jugador:
             return False
 
         if caracter == "D":
-            if self.llaves > 0:
-                self.llaves -= 1
-                # Se "abre" la compuerta: se reemplaza el carácter por
-                # piso normal en esa fila del mapa.
+            if self.estadisticas.llaves > 0:
+                self.estadisticas.usar_llave()
                 mapa[nuevo_y] = (
                     mapa[nuevo_y][:nuevo_x] + "." + mapa[nuevo_y][nuevo_x + 1:]
                 )
@@ -88,15 +79,28 @@ class Jugador:
 
         return True
 
+    def efectos_activos_restantes(self):
+        """Devuelve {nombre_efecto: segundos_restantes} de los efectos
+        temporales activos (velocidad/lentitud/invertido), para que el
+        HUD le avise al jugador qué le está pasando y por qué."""
+        ahora = pygame.time.get_ticks()
+        restantes = {}
+
+        for nombre, tiempo_fin in list(self._efectos_activos.items()):
+            if ahora < tiempo_fin:
+                restantes[nombre] = (tiempo_fin - ahora) / 1000
+            else:
+                del self._efectos_activos[nombre]
+
+        return restantes
+
     def recibir_golpe(self):
         """Llamado cuando el cazador atrapa al jugador. Si tiene un
-        escudo, lo consume y evita perder una vida. Devuelve True si
-        corresponde perder una vida, False si el escudo absorbió el golpe."""
-        if self.escudos > 0:
-            self.escudos -= 1
-            return False
-
-        return True
+        escudo, lo consume y evita perder una vida."""
+        if self.estadisticas.escudos > 0:
+            self.estadisticas.usar_escudo()
+        else:
+            self.estadisticas.perder_vida()
 
     def llego_a_salida(self, mapa):
         return mapa[self.y][self.x] == "S"

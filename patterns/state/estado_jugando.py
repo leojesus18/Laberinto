@@ -5,6 +5,8 @@ from cazador import Cazador
 from constantes import *
 from niveles import nivel1
 from patterns.factory.item_factory import generar_items_desde_mapa
+from patterns.observer.estadisticas_jugador import EstadisticasJugador
+from patterns.observer.hud import HUD
 
 
 class EstadoJugando(Estado):
@@ -18,11 +20,16 @@ class EstadoJugando(Estado):
 
         jugador_x, jugador_y, cazador_x, cazador_y = self._buscar_posiciones_iniciales()
 
-        self.jugador = Jugador(jugador_x, jugador_y)
+        # EstadisticasJugador es el Sujeto (patrón Observer): guarda
+        # vidas/escudos/llaves/puntaje y notifica a quien esté
+        # suscripto (el HUD) cada vez que algo cambia.
+        self.estadisticas = EstadisticasJugador(vidas_iniciales=3)
+        self.hud = HUD(self.estadisticas)  # el HUD se suscribe solo, en su __init__
+
+        self.jugador = Jugador(jugador_x, jugador_y, self.estadisticas)
         self.cazador = Cazador(cazador_x, cazador_y)
         self.items = generar_items_desde_mapa(self.mapa)
-        self.tiempo_inicio=pygame.time.get_ticks()
-        self.vidas=3
+        self.tiempo_inicio = pygame.time.get_ticks()
 
         from patterns.singleton.sound_manager import SoundManager
         self.sonido = SoundManager()
@@ -72,7 +79,11 @@ class EstadoJugando(Estado):
 
                         from patterns.state.estado_victoria import EstadoVictoria
                         self.manejador_estados.cambiar_estado(
-                            EstadoVictoria(self.manejador_estados, tiempo_transcurrido)
+                            EstadoVictoria(
+                                self.manejador_estados,
+                                tiempo_transcurrido,
+                                self.estadisticas.puntaje
+                            )
                         )
 
     def _recolectar_item_si_corresponde(self):
@@ -83,6 +94,10 @@ class EstadoJugando(Estado):
             if item.x == self.jugador.x and item.y == self.jugador.y:
                 item.aplicar_efecto(self.jugador)
                 item.recolectado = True
+
+                if item.puntos:
+                    self.estadisticas.sumar_puntos(item.puntos)
+
                 self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
 
     def actualizar(self):
@@ -91,12 +106,9 @@ class EstadoJugando(Estado):
         if self.cazador.atrapo_jugador(self.jugador.x, self.jugador.y):
             self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_cazador)
 
-            pierde_vida = self.jugador.recibir_golpe()  # False si un escudo absorbió el golpe
+            self.jugador.recibir_golpe()  # actualiza estadisticas y notifica al HUD solo
 
-            if pierde_vida:
-                self.vidas -= 1
-
-            if self.vidas <= 0:
+            if self.estadisticas.vidas <= 0:
                 from patterns.state.estado_gameover import EstadoGameOver
                 self.manejador_estados.cambiar_estado(
                     EstadoGameOver(self.manejador_estados)
@@ -136,9 +148,22 @@ class EstadoJugando(Estado):
 
         self.jugador.dibujar(pantalla)
         self.cazador.dibujar(pantalla)
-        fuente_hud = pygame.font.SysFont(None, 28)
-        texto_hud = fuente_hud.render(
-            f"Vidas: {self.vidas}   Escudos: {self.jugador.escudos}   Llaves: {self.jugador.llaves}",
-            True, BLANCO
-        )
-        pantalla.blit(texto_hud, (10, 10))
+
+        self.hud.dibujar(pantalla)  # HUD: se dibuja con lo que le llegó por notificación, no lee nada acá
+
+        # Avisar en pantalla qué efecto temporal está activo y por cuánto,
+        # para que un debuff (lentitud/invertido) no se sienta como que
+        # el juego se trabó. Esto es transitorio y no forma parte de las
+        # estadísticas "persistentes" del Observer.
+        NOMBRES_EFECTO = {
+            "velocidad": ("Velocidad+", VERDE_CLARO),
+            "lentitud": ("Lentitud", MARRON),
+            "invertido": ("Controles invertidos", VIOLETA),
+        }
+        fuente_efectos = pygame.font.SysFont(None, 24)
+        fila_y = 40
+        for nombre, segundos in self.jugador.efectos_activos_restantes().items():
+            etiqueta, color = NOMBRES_EFECTO.get(nombre, (nombre, BLANCO))
+            texto_efecto = fuente_efectos.render(f"{etiqueta} ({segundos:.1f}s)", True, color)
+            pantalla.blit(texto_efecto, (10, fila_y))
+            fila_y += 22

@@ -3,37 +3,34 @@ from constantes import *
 
 
 class Item:
-    """
-    Clase base para todos los ítems que aparecen en el laberinto.
-
-    Esta es la jerarquía de "productos" del patrón Factory Method:
-    el resto del juego (estado_jugando.py) solo trabaja contra esta
-    clase base (la dibuja, revisa si el jugador la tocó, le pide que
-    aplique su efecto). Nunca necesita saber qué subclase es en
-    concreto - eso lo decide la fábrica correspondiente en
-    item_factory.py.
-    """
+    
+    #Clase base para todos los ítems que aparecen en el laberinto.
+    
 
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.color = BLANCO
         self.recolectado = False
+        self.puntos = 0  # cuánto suma al puntaje al recolectarlo
 
     def aplicar_efecto(self, jugador):
         """Cada ítem concreto define acá qué le hace al jugador
         cuando lo recolecta. La clase base no hace nada."""
         pass
 
-    def dibujar(self, pantalla):
-        if self.recolectado:
-            return
-
-        centro = (
+    def _centro(self):
+        return (
             self.x * TAM_CASILLA + TAM_CASILLA // 2,
             self.y * TAM_CASILLA + TAM_CASILLA // 2
         )
-        pygame.draw.circle(pantalla, self.color, centro, TAM_CASILLA // 5)
+
+    def dibujar(self, pantalla):
+        #Por defecto dibuja un círculo simple."
+        if self.recolectado:
+            return
+
+        pygame.draw.circle(pantalla, self.color, self._centro(), TAM_CASILLA // 5)
 
 
 class ItemEscudo(Item):
@@ -43,9 +40,22 @@ class ItemEscudo(Item):
     def __init__(self, x, y):
         super().__init__(x, y)
         self.color = CELESTE
+        self.puntos = 15
 
     def aplicar_efecto(self, jugador):
-        jugador.escudos += 1
+        jugador.estadisticas.ganar_escudo()
+
+    def dibujar(self, pantalla):
+        if self.recolectado:
+            return
+        cx, cy = self._centro()
+        # Forma de escudo: un pentágono simple
+        puntos = [
+            (cx - 8, cy - 9), (cx + 8, cy - 9),
+            (cx + 8, cy + 3), (cx, cy + 11), (cx - 8, cy + 3),
+        ]
+        pygame.draw.polygon(pantalla, self.color, puntos)
+        pygame.draw.polygon(pantalla, BLANCO, puntos, 1)
 
 
 class ItemLlave(Item):
@@ -55,28 +65,47 @@ class ItemLlave(Item):
     def __init__(self, x, y):
         super().__init__(x, y)
         self.color = AMARILLO
+        self.puntos = 20
 
     def aplicar_efecto(self, jugador):
-        jugador.llaves += 1
+        jugador.estadisticas.ganar_llave()
+
+    def dibujar(self, pantalla):
+        if self.recolectado:
+            return
+        cx, cy = self._centro()
+        # Forma de llave: aro (bow) + tallo + dientes
+        pygame.draw.circle(pantalla, self.color, (cx - 6, cy), 6, 3)
+        pygame.draw.line(pantalla, self.color, (cx, cy), (cx + 11, cy), 3)
+        pygame.draw.line(pantalla, self.color, (cx + 11, cy), (cx + 11, cy + 5), 3)
+        pygame.draw.line(pantalla, self.color, (cx + 6, cy), (cx + 6, cy + 4), 3)
 
 
 class ItemVelocidad(Item):
     """Buff temporal: mientras está activo, cada movimiento del
-    jugador avanza 2 casillas en vez de 1 (si el camino está libre)."""
+    jugador avanza 2 casillas en vez de 1 ."""
 
     DURACION_MS = 6000
 
     def __init__(self, x, y):
         super().__init__(x, y)
         self.color = VERDE_CLARO
+        self.puntos = 25
 
     def aplicar_efecto(self, jugador):
         jugador.activar_efecto_temporal("velocidad", self.DURACION_MS)
 
+    def dibujar(self, pantalla):
+        if self.recolectado:
+            return
+        cx, cy = self._centro()
+        # Ícono "avance rápido": dos chevrones apuntando a la derecha
+        pygame.draw.polygon(pantalla, self.color, [(cx - 9, cy - 8), (cx - 9, cy + 8), (cx - 1, cy)])
+        pygame.draw.polygon(pantalla, self.color, [(cx - 1, cy - 8), (cx - 1, cy + 8), (cx + 7, cy)])
+
 
 class ItemLentitud(Item):
-    """Perjudicial: mientras está activo, el jugador solo se mueve
-    en 1 de cada 2 pulsaciones de tecla (el resto se ignoran)."""
+    #Perjudicial: el jugador solo se mueve en 1 de cada 2 pulsaciones de tecla .
 
     DURACION_MS = 5000
 
@@ -87,10 +116,17 @@ class ItemLentitud(Item):
     def aplicar_efecto(self, jugador):
         jugador.activar_efecto_temporal("lentitud", self.DURACION_MS)
 
+    def dibujar(self, pantalla):
+        if self.recolectado:
+            return
+        cx, cy = self._centro()
+        
+        pygame.draw.polygon(pantalla, self.color, [(cx + 9, cy - 8), (cx + 9, cy + 8), (cx + 1, cy)])
+        pygame.draw.polygon(pantalla, self.color, [(cx + 1, cy - 8), (cx + 1, cy + 8), (cx - 7, cy)])
+
 
 class ItemInvertir(Item):
-    """Perjudicial: mientras está activo, se invierten los controles
-    (arriba<->abajo, izquierda<->derecha)."""
+    
 
     DURACION_MS = 5000
 
@@ -100,3 +136,11 @@ class ItemInvertir(Item):
 
     def aplicar_efecto(self, jugador):
         jugador.activar_efecto_temporal("invertido", self.DURACION_MS)
+
+    def dibujar(self, pantalla):
+        if self.recolectado:
+            return
+        cx, cy = self._centro()
+        # Ícono de "intercambio": una flecha arriba y otra abajo
+        pygame.draw.polygon(pantalla, self.color, [(cx - 3, cy + 8), (cx - 8, cy - 1), (cx + 2, cy - 1)])
+        pygame.draw.polygon(pantalla, self.color, [(cx + 3, cy - 8), (cx - 2, cy + 1), (cx + 8, cy + 1)])

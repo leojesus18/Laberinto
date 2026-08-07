@@ -8,15 +8,16 @@ from constantes import *
 
 class EstadoVictoria(Estado):
 
-    def __init__(self, manejador_estados, tiempo_segundos):
+    def __init__(self, manejador_estados, tiempo_segundos, puntaje=0):
         super().__init__(manejador_estados)
         self.tiempo_segundos = tiempo_segundos
+        self.puntaje = puntaje
         self.fuente = pygame.font.SysFont(None, 64)
         self.fuente_texto = pygame.font.SysFont(None, 28)
 
         GestorSonido().reproducir_victoria()
         self._guardar_puntaje()
-        
+
         from patterns.singleton.sound_manager import SoundManager
         sonido = SoundManager()
         sonido.detener_musica()
@@ -28,6 +29,7 @@ class EstadoVictoria(Estado):
         repositorio.guardar_puntaje(
             nombre_jugador="Jugador",
             tiempo_segundos=self.tiempo_segundos,
+            puntaje=self.puntaje,
             dificultad=config.dificultad
         )
 
@@ -47,12 +49,17 @@ class EstadoVictoria(Estado):
         pantalla.fill(NEGRO)
 
         texto = self.fuente.render("¡GANASTE!", True, VERDE)
-        pantalla.blit(texto, (ANCHO // 2 - texto.get_width() // 2, ALTO // 2 - 70))
+        pantalla.blit(texto, (ANCHO // 2 - texto.get_width() // 2, ALTO // 2 - 90))
 
         texto_tiempo = self.fuente_texto.render(
             f"Tiempo: {self.tiempo_segundos:.1f} segundos", True, BLANCO
         )
-        pantalla.blit(texto_tiempo, (ANCHO // 2 - texto_tiempo.get_width() // 2, ALTO // 2 - 10))
+        pantalla.blit(texto_tiempo, (ANCHO // 2 - texto_tiempo.get_width() // 2, ALTO // 2 - 30))
+
+        texto_puntaje = self.fuente_texto.render(
+            f"Puntaje: {self.puntaje} puntos", True, AMARILLO
+        )
+        pantalla.blit(texto_puntaje, (ANCHO // 2 - texto_puntaje.get_width() // 2, ALTO // 2))
 
         texto2 = self.fuente_texto.render("Presioná ENTER para volver al menú", True, BLANCO)
-        pantalla.blit(texto2, (ANCHO // 2 - texto2.get_width() // 2, ALTO // 2 + 30))
+        pantalla.blit(texto2, (ANCHO // 2 - texto2.get_width() // 2, ALTO // 2 + 40))
