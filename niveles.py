@@ -4,10 +4,15 @@
 #   S  salida           C  posición inicial del cazador
 #   D  compuerta (necesita 1 llave para abrirse, se abre una sola vez)
 #   E  ítem escudo      K  ítem llave
-#   V  ítem velocidad (buff)
-#   L  ítem lentitud (debuff)      I  ítem invertir controles (debuff)
+#   V  ítem velocidad 
+#   L  ítem lentitud 
+#   I  ítem invertir controles 
 # Cualquier otro carácter (por ejemplo ".") se dibuja como piso normal.
 
+# Nivel 1: es el tutorial/nivel fácil. Tiene ítems "buenos" (escudo,
+# llave, velocidad) y UNA compuerta para que se entienda la mecánica,
+# pero SIN ítems perjudiciales (lentitud/invertir) - esos arrancan
+# recién en los niveles más difíciles, para no confundir en el primero.
 nivel1 = [
 
 "################",
@@ -15,7 +20,7 @@ nivel1 = [
 "# #####D # #####" ,
 "#  E   #  V    #",
 "###### ######  #",
-"#    L      I  #",
+"#              #",
 "# ####### ######",
 "#C             #",
 "################"
