@@ -2,7 +2,7 @@ import pygame
 
 from patterns.state.estado import Estado
 from patterns.singleton.configuracion import Configuracion
-from audio.gestor_sonido import GestorSonido
+from patterns.singleton.sound_manager import SoundManager
 from constantes import *
 
 
@@ -35,17 +35,16 @@ class EstadoDificultad(Estado):
 
                 if evento.key == pygame.K_UP:
                     self.indice_seleccionado = (self.indice_seleccionado - 1) % len(self.OPCIONES)
-                    GestorSonido().reproducir_menu()
+                    SoundManager().reproducir_menu()
 
                 elif evento.key == pygame.K_DOWN:
                     self.indice_seleccionado = (self.indice_seleccionado + 1) % len(self.OPCIONES)
-                    GestorSonido().reproducir_menu()
+                    SoundManager().reproducir_menu()
 
                 elif evento.key == pygame.K_RETURN:
                     clave, _ = self.OPCIONES[self.indice_seleccionado]
                     Configuracion().dificultad = clave
-                    GestorSonido().reproducir_confirmar()
-
+                    SoundManager().reproducir_confirmar()
                     from patterns.state.estado_jugando import EstadoJugando
                     self.manejador_estados.cambiar_estado(
                         EstadoJugando(self.manejador_estados)

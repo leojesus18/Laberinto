@@ -18,8 +18,8 @@ class EstadoMenu(Estado):
         for evento in eventos:
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_RETURN:
-                    from audio.gestor_sonido import GestorSonido
-                    GestorSonido().reproducir_confirmar()
+                    from patterns.singleton.sound_manager import SoundManager
+                    SoundManager().reproducir_confirmar()
 
                     # Import acá adentro para evitar import circular
                     from patterns.state.estado_dificultad import EstadoDificultad
