@@ -3,7 +3,7 @@ import sys
 
 from constantes import ANCHO, ALTO, FPS
 from core.state_manager import StateManager
-from patterns.state.estado_menu import EstadoMenu
+from patterns.state.estado_portada import EstadoPortada
 
 pygame.mixer.pre_init(44100, -16, 2, 512)
 
@@ -18,9 +18,9 @@ reloj = pygame.time.Clock()
 # Administrador de estados
 manejador_estados = StateManager()
 
-# Estado inicial: menú
+# Estado inicial: portada
 manejador_estados.cambiar_estado(
-    EstadoMenu(manejador_estados)
+    EstadoPortada(manejador_estados)
 )
 
 
