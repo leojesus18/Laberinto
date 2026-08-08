@@ -1,5 +1,11 @@
 import pygame
 from constantes import *
+from patterns.decorador.comportamiento_movimiento import (
+    ComportamientoMovimiento,
+    DecoradorVelocidad,
+    DecoradorLentitud,
+    DecoradorInvertido,
+)
 
 
 class Jugador:
@@ -22,28 +28,26 @@ class Jugador:
         self._ignorar_proximo_movimiento = True
 
     def mover(self, mapa, dx, dy):
-        """Intenta mover al jugador dx, dy casillas. Respeta paredes,
-        compuertas cerradas y bordes del mapa. Tiene en cuenta los
-        efectos temporales activos (velocidad, lentitud, invertido)."""
+       #Intenta mover al jugador dx, dy casillas. Respeta paredes,
+       #compuertas cerradas y bordes del mapa. Los efectos temporales
+       #(velocidad/lentitud/invertido) se aplican envolviendo el
+       #movimiento base con decoradores (patrón Decorator) según qué
+       #efectos estén activos en este momento."""
 
-        if self._tiene_efecto("invertido"):
-            dx, dy = -dx, -dy
+        comportamiento = ComportamientoMovimiento()
 
+        if self._tiene_efecto("velocidad"):
+            comportamiento = DecoradorVelocidad(comportamiento)
         if self._tiene_efecto("lentitud"):
-            # Se ignora un movimiento de cada dos
-            self._ignorar_proximo_movimiento = not self._ignorar_proximo_movimiento
-            if self._ignorar_proximo_movimiento:
-                return
+            comportamiento = DecoradorLentitud(comportamiento)
+        if self._tiene_efecto("invertido"):
+            comportamiento = DecoradorInvertido(comportamiento)
 
-        pasos = 2 if self._tiene_efecto("velocidad") else 1
-
-        for _ in range(pasos):
-            if not self._mover_una_casilla(mapa, dx, dy):
-                break
+        comportamiento.mover(self, mapa, dx, dy)
 
     def _mover_una_casilla(self, mapa, dx, dy):
-        """Mueve una sola casilla si es posible. Devuelve True si se
-        movió (útil para el buff de velocidad, que encadena 2 pasos)."""
+       #Mueve una sola casilla si es posible. Devuelve True si se
+       #movió (útil para el buff de velocidad, que encadena 2 pasos)."""
 
         nuevo_x = self.x + dx
         nuevo_y = self.y + dy
@@ -73,8 +77,8 @@ class Jugador:
         return True
 
     def activar_efecto_temporal(self, nombre, duracion_ms):
-        """Llamado por Item.aplicar_efecto() cuando el jugador
-        recolecta un ítem de velocidad/lentitud/invertir."""
+       #Llamado por Item.aplicar_efecto() cuando el jugador
+       #recolecta un ítem de velocidad/lentitud/invertir."""
         self._efectos_activos[nombre] = pygame.time.get_ticks() + duracion_ms
 
     def _tiene_efecto(self, nombre):
@@ -90,9 +94,9 @@ class Jugador:
         return True
 
     def efectos_activos_restantes(self):
-        """Devuelve {nombre_efecto: segundos_restantes} de los efectos
-        temporales activos (velocidad/lentitud/invertido), para que el
-        HUD le avise al jugador qué le está pasando y por qué."""
+       #Devuelve {nombre_efecto: segundos_restantes} de los efectos
+       #temporales activos (velocidad/lentitud/invertido), para que el
+       #HUD le avise al jugador qué le está pasando y por qué."""
         ahora = pygame.time.get_ticks()
         restantes = {}
 
@@ -105,8 +109,8 @@ class Jugador:
         return restantes
 
     def recibir_golpe(self, escudo_equipado=True):
-        """Llamado cuando el cazador atrapa al jugador. Si tiene un
-        escudo Y lo tiene equipado, lo consume y evita perder una vida."""
+       #Llamado cuando el cazador atrapa al jugador. Si tiene un
+       #escudo Y lo tiene equipado, lo consume y evita perder una vida."""
         if self.estadisticas.escudos > 0 and escudo_equipado:
             self.estadisticas.usar_escudo()
         else:
