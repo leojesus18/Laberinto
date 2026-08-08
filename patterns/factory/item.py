@@ -6,12 +6,8 @@ class Item:
     """
     Clase base para todos los ítems que aparecen en el laberinto.
 
-    Esta es la jerarquía de "productos" del patrón Factory Method:
-    el resto del juego (estado_jugando.py) solo trabaja contra esta
-    clase base (la dibuja, revisa si el jugador la tocó, le pide que
-    aplique su efecto). Nunca necesita saber qué subclase es en
-    concreto - eso lo decide la fábrica correspondiente en
-    item_factory.py.
+    Cada ítem tiene una posición (x, y) en el laberinto, un color para dibujarse,
+    un estado de si ha sido recolectado o no, y un valor de puntos.
     """
 
     def __init__(self, x, y):
