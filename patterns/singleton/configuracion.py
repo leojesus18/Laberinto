@@ -12,3 +12,4 @@ class Configuracion:
         self.volumen_musica = 0.5
         self.volumen_sonido = 0.7
         self.dificultad ="facil"     # puede ser "facil", "normal", "dificil"
+        self.nombre_jugador = ""     # se completa en EstadoNombre antes de jugar
