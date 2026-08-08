@@ -4,10 +4,18 @@ from constantes import *
 
 
 class HUD(Observador):
-    
-    #Observador concreto: se suscribe a un EstadisticasJugador y guarda su PROPIA copia de vidas/escudos/llaves/puntaje.
+    """
+    Observador concreto: se suscribe a un EstadisticasJugador (Sujeto)
+    y guarda su PROPIA copia de vidas/escudos/llaves/puntaje.
 
-    
+    La diferencia clave con la versión anterior (que leía
+    self.jugador.escudos directo en cada dibujar()) es que acá el HUD
+    nunca va a buscar el dato: EstadisticasJugador se lo empuja apenas
+    cambia, vía actualizar(). Si mañana el puntaje se actualiza 50
+    veces en un frame, el HUD igual solo termina mostrando el último
+    valor, sin acoplarse a cómo ni cuándo cambió.
+    """
+
     def __init__(self, estadisticas):
         self.vidas = estadisticas.vidas
         self.escudos = estadisticas.escudos

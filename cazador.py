@@ -2,11 +2,11 @@ import pygame
 from constantes import *
 from collections import deque
 from patterns.singleton.configuracion import Configuracion
-from constantes import *
+from patterns.strategy.estrategia_cazador import obtener_estrategia_para_nivel
 
 class Cazador:
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, indice_nivel=0):
 
         self.x = x
         self.y = y
@@ -22,7 +22,13 @@ class Cazador:
             "dificil":10
         }
 
-        self.frames_por_movimiento = velocidades.get(config.dificultad, 20)
+        frames_base = velocidades.get(config.dificultad, 20)
+
+        # Strategy: por encima de la dificultad elegida en el menú, el
+        # propio nivel exige más o menos agresividad (ver
+        # patterns/strategy/estrategia_cazador.py).
+        estrategia = obtener_estrategia_para_nivel(indice_nivel)
+        self.frames_por_movimiento = estrategia.ajustar_frames(frames_base)
 
     def mover(self, mapa, jugador_x, jugador_y):
 
@@ -115,11 +121,18 @@ class Cazador:
                             visitados[(nuevo_x, nuevo_y)] = (
                                 actual_x,    #Almacena el predecesor de la nueva posición
                                 actual_y     #Gracias a esto, se puede reconstruir el camino desde el objetivo hasta la posición inicial
-                        )
+                            )
 
-                        cola.append(
-                            (nuevo_x, nuevo_y)
-                        )
+                            # OJO: este append tiene que estar DENTRO del "if not in
+                            # visitados" (acá adentro), no afuera. Si no, una celda ya
+                            # visitada se vuelve a meter en la cola cada vez que otro
+                            # vecino la toca, y en un mapa con zonas abiertas eso crece
+                            # exponencialmente hasta explotar la memoria (esto pasaba
+                            # antes y no se notaba en el nivel 1 porque era chico y muy
+                            # angosto; en los niveles más abiertos/grandes sí explota).
+                            cola.append(
+                                (nuevo_x, nuevo_y)
+                            )
 
         if (objetivo_x, objetivo_y) not in visitados: #Si el objetivo no se ha alcanzado, significa que no hay camino posible, por lo que se devuelve una lista vacía
             return []
