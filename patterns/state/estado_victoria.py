@@ -2,7 +2,6 @@ import pygame
 from patterns.state.estado import Estado
 from database.score_repository import ScoreRepository
 from patterns.singleton.configuracion import Configuracion
-from audio.gestor_sonido import GestorSonido
 from constantes import *
 
 
@@ -15,7 +14,6 @@ class EstadoVictoria(Estado):
         self.fuente = pygame.font.SysFont(None, 64)
         self.fuente_texto = pygame.font.SysFont(None, 28)
 
-        GestorSonido().reproducir_victoria()
         self._guardar_puntaje()
 
         from patterns.singleton.sound_manager import SoundManager

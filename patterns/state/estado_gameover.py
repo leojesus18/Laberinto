@@ -1,6 +1,5 @@
 import pygame
 from patterns.state.estado import Estado
-from audio.gestor_sonido import GestorSonido
 from constantes import *
 
 
@@ -15,8 +14,6 @@ class EstadoGameOver(Estado):
         sonido.detener_musica()
         sonido.reproducir_sonido(sonido.sonido_gameover)
         
-
-        GestorSonido().reproducir_gameover()
 
     def manejar_eventos(self, eventos):
         for evento in eventos:
