@@ -3,9 +3,16 @@ from constantes import *
 
 
 class Item:
-    
-    #Clase base para todos los ítems que aparecen en el laberinto.
-    
+    """
+    Clase base para todos los ítems que aparecen en el laberinto.
+
+    Esta es la jerarquía de "productos" del patrón Factory Method:
+    el resto del juego (estado_jugando.py) solo trabaja contra esta
+    clase base (la dibuja, revisa si el jugador la tocó, le pide que
+    aplique su efecto). Nunca necesita saber qué subclase es en
+    concreto - eso lo decide la fábrica correspondiente en
+    item_factory.py.
+    """
 
     def __init__(self, x, y):
         self.x = x
@@ -26,7 +33,9 @@ class Item:
         )
 
     def dibujar(self, pantalla):
-        #Por defecto dibuja un círculo simple."
+        """Por defecto dibuja un círculo simple. Cada ítem concreto
+        sobreescribe esto con una forma que se reconozca de un vistazo,
+        sin depender de sprites/imágenes externas."""
         if self.recolectado:
             return
 
@@ -85,7 +94,7 @@ class ItemLlave(Item):
 
 class ItemVelocidad(Item):
     """Buff temporal: mientras está activo, cada movimiento del
-    jugador avanza 2 casillas en vez de 1 ."""
+    jugador avanza 2 casillas en vez de 1 (si el camino está libre)."""
 
     DURACION_MS = 6000
 
@@ -107,7 +116,8 @@ class ItemVelocidad(Item):
 
 
 class ItemLentitud(Item):
-    #Perjudicial: el jugador solo se mueve en 1 de cada 2 pulsaciones de tecla .
+    """Perjudicial: mientras está activo, el jugador solo se mueve
+    en 1 de cada 2 pulsaciones de tecla (el resto se ignoran)."""
 
     DURACION_MS = 5000
 
@@ -122,13 +132,15 @@ class ItemLentitud(Item):
         if self.recolectado:
             return
         cx, cy = self._centro()
-        
+        # Ícono "retroceso": dos chevrones apuntando a la izquierda
+        # (espejo del de velocidad, para que se note que es lo opuesto)
         pygame.draw.polygon(pantalla, self.color, [(cx + 9, cy - 8), (cx + 9, cy + 8), (cx + 1, cy)])
         pygame.draw.polygon(pantalla, self.color, [(cx + 1, cy - 8), (cx + 1, cy + 8), (cx - 7, cy)])
 
 
 class ItemInvertir(Item):
-    
+    """Perjudicial: mientras está activo, se invierten los controles
+    (arriba<->abajo, izquierda<->derecha)."""
 
     DURACION_MS = 5000
 

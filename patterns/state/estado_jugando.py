@@ -3,7 +3,7 @@ from patterns.state.estado import Estado
 from jugador import Jugador
 from cazador import Cazador
 from constantes import *
-from niveles import nivel1
+from niveles import NIVELES
 from patterns.factory.item_factory import generar_items_desde_mapa
 from patterns.observer.estadisticas_jugador import EstadisticasJugador
 from patterns.observer.hud import HUD
@@ -13,29 +13,54 @@ from patterns.singleton.configuracion import Configuracion
 
 class EstadoJugando(Estado):
 
-    def __init__(self, manejador_estados):
+    def __init__(self, manejador_estados, indice_nivel=0, estadisticas=None, hud=None):
         super().__init__(manejador_estados)
-        # list(nivel1) copia la lista de filas: así, si el jugador abre
-        # una compuerta, se modifica esta copia y no el mapa original de
+
+        # indice_nivel es 0-based (0 = nivel1 ... 9 = nivel10).
+        self.indice_nivel = indice_nivel
+
+        # list(...) copia la lista de filas: así, si el jugador abre una
+        # compuerta, se modifica esta copia y no el mapa original de
         # niveles.py (que se reutilizaría "roto" en la próxima partida).
-        self.mapa = list(nivel1)
+        self.mapa = list(NIVELES[indice_nivel])
 
         jugador_x, jugador_y, cazador_x, cazador_y = self._buscar_posiciones_iniciales()
 
         # EstadisticasJugador es el Sujeto (patrón Observer): guarda
         # vidas/escudos/llaves/puntaje y notifica a quien esté
         # suscripto (el HUD) cada vez que algo cambia.
-        self.estadisticas = EstadisticasJugador(vidas_iniciales=3)
-        self.hud = HUD(self.estadisticas)  # el HUD se suscribe solo, en su __init__
+        #
+        # Si viene de un nivel anterior (estadisticas/hud no son None),
+        # seguimos usando la MISMA instancia: vidas, escudos y puntaje
+        # se arrastran de nivel a nivel (una partida real, no 10 partidas
+        # sueltas). Las llaves sí se reinician: son específicas de las
+        # compuertas de cada laberinto.
+        if estadisticas is None:
+            self.estadisticas = EstadisticasJugador(vidas_iniciales=3)
+        else:
+            self.estadisticas = estadisticas
+            self.estadisticas.reiniciar_llaves()
+
+        self.hud = hud if hud is not None else HUD(self.estadisticas)
 
         self.jugador = Jugador(jugador_x, jugador_y, self.estadisticas)
-        self.cazador = Cazador(cazador_x, cazador_y)
+        self.cazador = Cazador(cazador_x, cazador_y, indice_nivel)
         self.items = generar_items_desde_mapa(self.mapa)
         self.tiempo_inicio = pygame.time.get_ticks()
 
         from patterns.singleton.sound_manager import SoundManager
         self.sonido = SoundManager()
         self.sonido.reproducir_musica(self.sonido.musica_juego)
+
+        # Se crean UNA sola vez acá, no en dibujar() (que corre ~60
+        # veces por segundo): crear una fuente por frame es innecesario
+        # y de las cosas que más suman a que un juego 2D "ande lento".
+        self._fuente_efectos = pygame.font.SysFont(None, 24)
+        self._NOMBRES_EFECTO = {
+            "velocidad": ("Velocidad+", VERDE_CLARO),
+            "lentitud": ("Lentitud", MARRON),
+            "invertido": ("Controles invertidos", VIOLETA),
+        }
 
     def _buscar_posiciones_iniciales(self):
         jugador_x = jugador_y = 0
@@ -88,7 +113,9 @@ class EstadoJugando(Estado):
                             EstadoVictoria(
                                 self.manejador_estados,
                                 tiempo_transcurrido,
-                                self.estadisticas.puntaje
+                                self.estadisticas,
+                                self.hud,
+                                self.indice_nivel
                             )
                         )
 
@@ -183,28 +210,52 @@ class EstadoJugando(Estado):
 
         self.hud.dibujar(pantalla)  # HUD: se dibuja con lo que le llegó por notificación, no lee nada acá
 
-        # Avisar en pantalla qué efecto temporal está activo y por cuánto,
-        # para que un debuff (lentitud/invertido) no se sienta como que
-        # el juego se trabó. Esto es transitorio y no forma parte de las
-        # estadísticas "persistentes" del Observer.
-
+        # Mostrar información del escudo
         if self.estadisticas.escudos > 0:
-            equipado = ItemRepository().esta_equipado(Configuracion().nombre_jugador, "escudo")
-            texto_escudo = "Escudo: EQUIPADO (E)" if equipado else "Escudo: guardado (E para equipar)"
+            equipado = ItemRepository().esta_equipado(
+                Configuracion().nombre_jugador,
+                "escudo"
+            )
+
+            texto_escudo = (
+                "Escudo: EQUIPADO (E)"
+                if equipado
+                else "Escudo: guardado (E para equipar)"
+            )
+
             color_escudo = VERDE if equipado else GRIS
+
             fuente_escudo = pygame.font.SysFont(None, 22)
-            render_escudo = fuente_escudo.render(texto_escudo, True, color_escudo)
-            pantalla.blit(render_escudo, (10, ALTO - 30))
-                
-        NOMBRES_EFECTO = {
-            "velocidad": ("Velocidad+", VERDE_CLARO),
-            "lentitud": ("Lentitud", MARRON),
-            "invertido": ("Controles invertidos", VIOLETA),
-        }
-        fuente_efectos = pygame.font.SysFont(None, 24)
+
+            render_escudo = fuente_escudo.render(
+                texto_escudo,
+                True,
+                color_escudo
+            )
+
+            pantalla.blit(
+                render_escudo,
+                (10, ALTO - 30)
+            )
+
+        # Mostrar efectos temporales activos
         fila_y = 40
+
         for nombre, segundos in self.jugador.efectos_activos_restantes().items():
-            etiqueta, color = NOMBRES_EFECTO.get(nombre, (nombre, BLANCO))
-            texto_efecto = fuente_efectos.render(f"{etiqueta} ({segundos:.1f}s)", True, color)
-            pantalla.blit(texto_efecto, (10, fila_y))
+            etiqueta, color = self._NOMBRES_EFECTO.get(
+                nombre,
+                (nombre, BLANCO)
+            )
+
+            texto_efecto = self._fuente_efectos.render(
+                f"{etiqueta} ({segundos:.1f}s)",
+                True,
+                color
+            )
+
+            pantalla.blit(
+                texto_efecto,
+                (10, fila_y)
+            )
+
             fila_y += 22

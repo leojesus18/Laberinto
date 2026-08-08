@@ -9,15 +9,23 @@ class Jugador:
         self.y = y
         self.color = AZUL
 
-        
+        # EstadisticasJugador (patrón Observer, ver patterns/observer/)
+        # es la única fuente de verdad para vidas/escudos/llaves. El HUD
+        # observa esta misma instancia, así que cualquier cambio hecho
+        # acá (recibir_golpe, abrir una compuerta) se refleja solo en
+        # pantalla sin que Jugador sepa que existe un HUD.
         self.estadisticas = estadisticas
 
-        self._efectos_activos = {}  
-        
+        self._efectos_activos = {}  # nombre -> tiempo_fin_ms
+        # Arranca en True para que, al activar lentitud, el PRIMER
+        # movimiento se registre y el segundo se ignore (no al revés).
         self._ignorar_proximo_movimiento = True
 
     def mover(self, mapa, dx, dy):
-        
+        """Intenta mover al jugador dx, dy casillas. Respeta paredes,
+        compuertas cerradas y bordes del mapa. Tiene en cuenta los
+        efectos temporales activos (velocidad, lentitud, invertido)."""
+
         if self._tiene_efecto("invertido"):
             dx, dy = -dx, -dy
 
@@ -35,7 +43,7 @@ class Jugador:
 
     def _mover_una_casilla(self, mapa, dx, dy):
         """Mueve una sola casilla si es posible. Devuelve True si se
-        movió """
+        movió (útil para el buff de velocidad, que encadena 2 pasos)."""
 
         nuevo_x = self.x + dx
         nuevo_y = self.y + dy
@@ -52,6 +60,8 @@ class Jugador:
         if caracter == "D":
             if self.estadisticas.llaves > 0:
                 self.estadisticas.usar_llave()
+                # Se "abre" la compuerta: se reemplaza el carácter por
+                # piso normal en esa fila del mapa.
                 mapa[nuevo_y] = (
                     mapa[nuevo_y][:nuevo_x] + "." + mapa[nuevo_y][nuevo_x + 1:]
                 )
