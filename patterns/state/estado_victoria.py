@@ -25,7 +25,7 @@ class EstadoVictoria(Estado):
         config = Configuracion()
         repositorio = ScoreRepository()
         repositorio.guardar_puntaje(
-            nombre_jugador="Jugador",
+            nombre_jugador=config.nombre_jugador,
             tiempo_segundos=self.tiempo_segundos,
             puntaje=self.puntaje,
             dificultad=config.dificultad

@@ -7,6 +7,8 @@ from niveles import nivel1
 from patterns.factory.item_factory import generar_items_desde_mapa
 from patterns.observer.estadisticas_jugador import EstadisticasJugador
 from patterns.observer.hud import HUD
+from database.item_repository import ItemRepository
+from patterns.singleton.configuracion import Configuracion
 
 
 class EstadoJugando(Estado):
@@ -59,6 +61,10 @@ class EstadoJugando(Estado):
                     )
                     return
 
+                if evento.key == pygame.K_e:
+                    self._alternar_equipo_escudo()
+                    return
+
                 dx = dy = 0
                 if evento.key == pygame.K_UP:
                     dy = -1
@@ -98,7 +104,27 @@ class EstadoJugando(Estado):
                 if item.puntos:
                     self.estadisticas.sumar_puntos(item.puntos)
 
+                # Persistencia en MySQL: solo escudo y llave se guardan
+                # en el inventario (Repository), los demás son efectos
+                # temporales de una sola partida y no se guardan.
+                if getattr(item, "tipo", None) in ("escudo", "llave"):
+                    nombre = Configuracion().nombre_jugador
+                    ItemRepository().guardar_item(nombre, item.tipo, 1)
+
                 self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
+
+    def _alternar_equipo_escudo(self):
+        """Tecla E: equipa o desequipa el escudo (patrón Repository,
+        persiste en MySQL). Solo se puede equipar si hay stock."""
+        if self.estadisticas.escudos <= 0:
+            return
+
+        nombre = Configuracion().nombre_jugador
+        repositorio = ItemRepository()
+        equipado_actual = repositorio.esta_equipado(nombre, "escudo")
+        repositorio.equipar_item(nombre, "escudo", not equipado_actual)
+        self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
+
 
     def actualizar(self):
         self.cazador.mover(self.mapa, self.jugador.x, self.jugador.y)
@@ -106,7 +132,13 @@ class EstadoJugando(Estado):
         if self.cazador.atrapo_jugador(self.jugador.x, self.jugador.y):
             self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_cazador)
 
-            self.jugador.recibir_golpe()  # actualiza estadisticas y notifica al HUD solo
+            nombre = Configuracion().nombre_jugador
+            escudo_equipado = ItemRepository().esta_equipado(nombre, "escudo")
+
+            self.jugador.recibir_golpe(escudo_equipado)  # actualiza estadisticas y notifica al HUD solo
+
+            if escudo_equipado and self.estadisticas.escudos >= 0:
+                ItemRepository().usar_item(nombre, "escudo")
 
             if self.estadisticas.vidas <= 0:
                 from patterns.state.estado_gameover import EstadoGameOver
@@ -155,6 +187,15 @@ class EstadoJugando(Estado):
         # para que un debuff (lentitud/invertido) no se sienta como que
         # el juego se trabó. Esto es transitorio y no forma parte de las
         # estadísticas "persistentes" del Observer.
+
+        if self.estadisticas.escudos > 0:
+            equipado = ItemRepository().esta_equipado(Configuracion().nombre_jugador, "escudo")
+            texto_escudo = "Escudo: EQUIPADO (E)" if equipado else "Escudo: guardado (E para equipar)"
+            color_escudo = VERDE if equipado else GRIS
+            fuente_escudo = pygame.font.SysFont(None, 22)
+            render_escudo = fuente_escudo.render(texto_escudo, True, color_escudo)
+            pantalla.blit(render_escudo, (10, ALTO - 30))
+                
         NOMBRES_EFECTO = {
             "velocidad": ("Velocidad+", VERDE_CLARO),
             "lentitud": ("Lentitud", MARRON),

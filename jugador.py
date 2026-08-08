@@ -94,10 +94,10 @@ class Jugador:
 
         return restantes
 
-    def recibir_golpe(self):
+    def recibir_golpe(self, escudo_equipado=True):
         """Llamado cuando el cazador atrapa al jugador. Si tiene un
-        escudo, lo consume y evita perder una vida."""
-        if self.estadisticas.escudos > 0:
+        escudo Y lo tiene equipado, lo consume y evita perder una vida."""
+        if self.estadisticas.escudos > 0 and escudo_equipado:
             self.estadisticas.usar_escudo()
         else:
             self.estadisticas.perder_vida()

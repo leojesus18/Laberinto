@@ -41,6 +41,7 @@ class ItemEscudo(Item):
         super().__init__(x, y)
         self.color = CELESTE
         self.puntos = 15
+        self.tipo="escudo"
 
     def aplicar_efecto(self, jugador):
         jugador.estadisticas.ganar_escudo()
@@ -66,6 +67,7 @@ class ItemLlave(Item):
         super().__init__(x, y)
         self.color = AMARILLO
         self.puntos = 20
+        self.tipo="llave"
 
     def aplicar_efecto(self, jugador):
         jugador.estadisticas.ganar_llave()

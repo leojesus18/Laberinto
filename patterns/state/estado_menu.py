@@ -22,9 +22,9 @@ class EstadoMenu(Estado):
                     SoundManager().reproducir_confirmar()
 
                     # Import acá adentro para evitar import circular
-                    from patterns.state.estado_dificultad import EstadoDificultad
+                    from patterns.state.estado_nombre import EstadoNombre
                     self.manejador_estados.cambiar_estado(
-                        EstadoDificultad(self.manejador_estados)
+                        EstadoNombre(self.manejador_estados)
                     )
 
     def actualizar(self):
