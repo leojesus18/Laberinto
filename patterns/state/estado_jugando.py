@@ -9,6 +9,7 @@ from patterns.observer.estadisticas_jugador import EstadisticasJugador
 from patterns.observer.hud import HUD
 from database.item_repository import ItemRepository
 from patterns.singleton.configuracion import Configuracion
+from patterns.command.comandos_jugando import ComandoMover, ComandoPausar, ComandoEquiparEscudo
 
 
 class EstadoJugando(Estado):
@@ -29,7 +30,6 @@ class EstadoJugando(Estado):
         # EstadisticasJugador es el Sujeto (patrón Observer): guarda
         # vidas/escudos/llaves/puntaje y notifica a quien esté
         # suscripto (el HUD) cada vez que algo cambia.
-        #
         # Si viene de un nivel anterior (estadisticas/hud no son None),
         # seguimos usando la MISMA instancia: vidas, escudos y puntaje
         # se arrastran de nivel a nivel (una partida real, no 10 partidas
@@ -62,6 +62,18 @@ class EstadoJugando(Estado):
             "invertido": ("Controles invertidos", VIOLETA),
         }
 
+        # Patrón Command: cada tecla queda asociada a un objeto Comando.
+        # manejar_eventos ya no tiene que saber CÓMO se mueve el jugador
+        # o cómo se pausa, solo busca el comando de la tecla y lo ejecuta.
+        self.comandos = {
+            pygame.K_UP: ComandoMover(self, 0, -1),
+            pygame.K_DOWN: ComandoMover(self, 0, 1),
+            pygame.K_LEFT: ComandoMover(self, -1, 0),
+            pygame.K_RIGHT: ComandoMover(self, 1, 0),
+            pygame.K_ESCAPE: ComandoPausar(self),
+            pygame.K_e: ComandoEquiparEscudo(self),
+        }
+
     def _buscar_posiciones_iniciales(self):
         jugador_x = jugador_y = 0
         cazador_x = cazador_y = 0
@@ -78,46 +90,38 @@ class EstadoJugando(Estado):
     def manejar_eventos(self, eventos):
         for evento in eventos:
             if evento.type == pygame.KEYDOWN:
+                comando = self.comandos.get(evento.key)
+                if comando:
+                    comando.ejecutar()
 
-                if evento.key == pygame.K_ESCAPE:
-                    from patterns.state.estado_pausa import EstadoPausa
-                    self.manejador_estados.cambiar_estado(
-                        EstadoPausa(self.manejador_estados, self)
-                    )
-                    return
+    def mover_jugador(self, dx, dy):
+       #Receptor del ComandoMover: mueve al jugador, reproduce el
+       #sonido de paso, revisa si recolectó algo, y si llegó a la
+       #salida pasa a la pantalla de victoria.
+        self.jugador.mover(self.mapa, dx, dy)
+        self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
+        self._recolectar_item_si_corresponde()
 
-                if evento.key == pygame.K_e:
-                    self._alternar_equipo_escudo()
-                    return
+        if self.jugador.llego_a_salida(self.mapa):
+            tiempo_transcurrido = (pygame.time.get_ticks() - self.tiempo_inicio) / 1000
 
-                dx = dy = 0
-                if evento.key == pygame.K_UP:
-                    dy = -1
-                elif evento.key == pygame.K_DOWN:
-                    dy = 1
-                elif evento.key == pygame.K_LEFT:
-                    dx = -1
-                elif evento.key == pygame.K_RIGHT:
-                    dx = 1
+            from patterns.state.estado_victoria import EstadoVictoria
+            self.manejador_estados.cambiar_estado(
+                EstadoVictoria(
+                    self.manejador_estados,
+                    tiempo_transcurrido,
+                    self.estadisticas,
+                    self.hud,
+                    self.indice_nivel
+                )
+            )
 
-                if dx != 0 or dy != 0:
-                    self.jugador.mover(self.mapa, dx, dy)
-                    self.sonido.reproducir_sonido(self.sonido.sonido_movimiento_jugador)
-                    self._recolectar_item_si_corresponde()
-
-                    if self.jugador.llego_a_salida(self.mapa):
-                        tiempo_transcurrido = (pygame.time.get_ticks() - self.tiempo_inicio) / 1000
-
-                        from patterns.state.estado_victoria import EstadoVictoria
-                        self.manejador_estados.cambiar_estado(
-                            EstadoVictoria(
-                                self.manejador_estados,
-                                tiempo_transcurrido,
-                                self.estadisticas,
-                                self.hud,
-                                self.indice_nivel
-                            )
-                        )
+    def pausar(self):
+       #Receptor del ComandoPausar
+        from patterns.state.estado_pausa import EstadoPausa
+        self.manejador_estados.cambiar_estado(
+            EstadoPausa(self.manejador_estados, self)
+        )
 
     def _recolectar_item_si_corresponde(self):
         for item in self.items:
