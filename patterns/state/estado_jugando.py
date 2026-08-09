@@ -10,6 +10,8 @@ from patterns.observer.hud import HUD
 from database.item_repository import ItemRepository
 from patterns.singleton.configuracion import Configuracion
 from patterns.command.comandos_jugando import ComandoMover, ComandoPausar, ComandoEquiparEscudo
+from tiles_laberinto import obtener_tile, color_respaldo
+from decoraciones import DECORACIONES_POR_NIVEL, dibujar_decoraciones
 
 
 class EstadoJugando(Estado):
@@ -206,14 +208,23 @@ class EstadoJugando(Estado):
                     TAM_CASILLA
                 )
 
-                if caracter == "#":
-                    pygame.draw.rect(hoja_mapa, GRIS, rect)
-                elif caracter == "S":
-                    pygame.draw.rect(hoja_mapa, VERDE, rect)
-                elif caracter == "D":
-                    pygame.draw.rect(hoja_mapa, MARRON_OSCURO, rect)
+                tile = obtener_tile(caracter, TAM_CASILLA)
+
+                if tile is not None:
+                    hoja_mapa.blit(tile, rect)
                 else:
-                    pygame.draw.rect(hoja_mapa, BLANCO, rect)
+                    # Respaldo: si todavía falta el archivo de imagen
+                    # para este tile, se dibuja el color de siempre así
+                    # el juego sigue siendo jugable mientras se van
+                    # subiendo las imágenes.
+                    pygame.draw.rect(hoja_mapa, color_respaldo(caracter), rect)
+
+        # Decoraciones: capa puramente visual, se dibuja DESPUÉS del
+        # piso/paredes (para quedar encima) pero ANTES de items y
+        # personajes (para quedar detrás de ellos, como el mobiliario
+        # de fondo). Nunca participa de la colisión.
+        decoraciones_nivel = DECORACIONES_POR_NIVEL.get(self.indice_nivel, [])
+        dibujar_decoraciones(hoja_mapa, decoraciones_nivel, TAM_CASILLA)
 
         for item in self.items:
             item.dibujar(hoja_mapa)
