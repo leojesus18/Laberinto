@@ -75,8 +75,6 @@ class EstadoMenu(Estado):
     def dibujar(self, pantalla):
         pantalla.blit(self.fondo, (0, 0))
 
-        self._dibujar_titulo(pantalla)
-
         if self.mostrando_ayuda:
             self._dibujar_ayuda(pantalla)
         else:
