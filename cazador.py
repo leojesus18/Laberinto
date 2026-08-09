@@ -17,6 +17,7 @@ class Cazador:
         clave_cazador = Configuracion().personaje_cazador
         self.sprites = cargar_sprites_direccionales(clave_cazador, int(TAM_CASILLA * 1.6))
         self.direccion = "frente"
+        self.frame_animacion = 0  # índice del frame de caminata actual
 
         config = Configuracion()
 
@@ -62,8 +63,12 @@ class Cazador:
             self.x = siguiente_x
             self.y = siguiente_y
 
+            cantidad_frames = len(self.sprites[self.direccion])
+            self.frame_animacion = (self.frame_animacion + 1) % cantidad_frames
+
     def dibujar(self, pantalla):
-        sprite = self.sprites[self.direccion]
+        frames = self.sprites[self.direccion]
+        sprite = frames[self.frame_animacion % len(frames)]
         x_centro = self.x * TAM_CASILLA + TAM_CASILLA // 2
         y_pie = self.y * TAM_CASILLA + TAM_CASILLA
 
