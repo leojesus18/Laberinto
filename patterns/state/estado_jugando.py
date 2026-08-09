@@ -186,6 +186,15 @@ class EstadoJugando(Estado):
     def dibujar(self, pantalla):
         pantalla.fill(NEGRO)
 
+        # El mapa se arma en una "hoja" del tamaño exacto del laberinto
+        # (cada nivel mide distinto), se agranda para ocupar la mayor
+        # parte posible de la pantalla SIN deformar las casillas
+        # (misma escala en x e y), y se centra en la ventana.
+        ancho_mapa = len(self.mapa[0]) * TAM_CASILLA
+        alto_mapa = len(self.mapa) * TAM_CASILLA
+        hoja_mapa = pygame.Surface((ancho_mapa, alto_mapa))
+        hoja_mapa.fill(NEGRO)
+
         for fila in range(len(self.mapa)):
             for columna in range(len(self.mapa[fila])):
                 caracter = self.mapa[fila][columna]
@@ -198,19 +207,31 @@ class EstadoJugando(Estado):
                 )
 
                 if caracter == "#":
-                    pygame.draw.rect(pantalla, GRIS, rect)
+                    pygame.draw.rect(hoja_mapa, GRIS, rect)
                 elif caracter == "S":
-                    pygame.draw.rect(pantalla, VERDE, rect)
+                    pygame.draw.rect(hoja_mapa, VERDE, rect)
                 elif caracter == "D":
-                    pygame.draw.rect(pantalla, MARRON_OSCURO, rect)
+                    pygame.draw.rect(hoja_mapa, MARRON_OSCURO, rect)
                 else:
-                    pygame.draw.rect(pantalla, BLANCO, rect)
+                    pygame.draw.rect(hoja_mapa, BLANCO, rect)
 
         for item in self.items:
-            item.dibujar(pantalla)
+            item.dibujar(hoja_mapa)
 
-        self.jugador.dibujar(pantalla)
-        self.cazador.dibujar(pantalla)
+        self.jugador.dibujar(hoja_mapa)
+        self.cazador.dibujar(hoja_mapa)
+
+        # Escalar manteniendo proporción: se usa el menor de los dos
+        # factores (ancho/alto) para que el mapa entre completo sin
+        # recortarse ni deformarse.
+        escala = min(ANCHO / ancho_mapa, ALTO / alto_mapa)
+        ancho_final = int(ancho_mapa * escala)
+        alto_final = int(alto_mapa * escala)
+        hoja_mapa = pygame.transform.smoothscale(hoja_mapa, (ancho_final, alto_final))
+
+        offset_x = (ANCHO - ancho_final) // 2
+        offset_y = (ALTO - alto_final) // 2
+        pantalla.blit(hoja_mapa, (offset_x, offset_y))
 
         self.hud.dibujar(pantalla)  # HUD: se dibuja con lo que le llegó por notificación, no lee nada acá
 
