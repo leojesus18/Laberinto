@@ -6,6 +6,8 @@ from patterns.decorador.comportamiento_movimiento import (
     DecoradorLentitud,
     DecoradorInvertido,
 )
+from patterns.singleton.configuracion import Configuracion
+from sprites_personajes import cargar_sprites_direccionales, direccion_segun_movimiento
 
 
 class Jugador:
@@ -14,6 +16,10 @@ class Jugador:
         self.x = x
         self.y = y
         self.color = AZUL
+
+        clave_personaje = Configuracion().personaje_jugador
+        self.sprites = cargar_sprites_direccionales(clave_personaje, int(TAM_CASILLA * 1.6))
+        self.direccion = "frente"
 
         # EstadisticasJugador (patrón Observer, ver patterns/observer/)
         # es la única fuente de verdad para vidas/escudos/llaves. El HUD
@@ -47,7 +53,9 @@ class Jugador:
 
     def _mover_una_casilla(self, mapa, dx, dy):
        #Mueve una sola casilla si es posible. Devuelve True si se
-       #movió (útil para el buff de velocidad, que encadena 2 pasos)."""
+       #movió (útil para el buff de velocidad, que encadena 2 pasos)
+
+        self.direccion = direccion_segun_movimiento(dx, dy, self.direccion)
 
         nuevo_x = self.x + dx
         nuevo_y = self.y + dy
@@ -120,12 +128,11 @@ class Jugador:
         return mapa[self.y][self.x] == "S"
 
     def dibujar(self, pantalla):
-        pygame.draw.circle(
-            pantalla,
-            self.color,
-            (
-                self.x * TAM_CASILLA + TAM_CASILLA // 2,
-                self.y * TAM_CASILLA + TAM_CASILLA // 2
-            ),
-            TAM_CASILLA // 3
-        )
+        sprite = self.sprites[self.direccion]
+        x_centro = self.x * TAM_CASILLA + TAM_CASILLA // 2
+        y_pie = self.y * TAM_CASILLA + TAM_CASILLA
+
+        pantalla.blit(sprite, (
+            x_centro - sprite.get_width() // 2,
+            y_pie - sprite.get_height()
+        ))
