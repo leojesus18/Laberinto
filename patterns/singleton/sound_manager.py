@@ -23,6 +23,15 @@ class SoundManager:
         self.sonido_victoria = pygame.mixer.Sound("assets/sounds/victoria.mp3")
         self.sonido_gameover = pygame.mixer.Sound("assets/sounds/gameover.mp3")
 
+        # Aplica el volumen guardado en Configuracion (Singleton) a los
+        # efectos de sonido recién cargados, para que no siempre suenen
+        # al 100% sin importar lo que diga la configuración.
+        from patterns.singleton.configuracion import Configuracion
+        volumen_sonido = Configuracion().volumen_sonido
+        for efecto in (self.sonido_movimiento_jugador, self.sonido_movimiento_cazador,
+                       self.sonido_victoria, self.sonido_gameover):
+            efecto.set_volume(volumen_sonido)
+
         self.musica_menu = "assets/sounds/instrumental2.mp3"
         self.musica_juego = "assets/sounds/instrumental1.mp3"
 
@@ -33,7 +42,9 @@ class SoundManager:
         self.sonido_confirmar = self._crear_tono_doble(523, 659, 90)
 
     def reproducir_musica(self, ruta, loop=True):
+        from patterns.singleton.configuracion import Configuracion
         pygame.mixer.music.load(ruta)
+        pygame.mixer.music.set_volume(Configuracion().volumen_musica)
         pygame.mixer.music.play(-1 if loop else 0)
 
     def detener_musica(self):
