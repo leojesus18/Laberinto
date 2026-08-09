@@ -20,6 +20,7 @@ class Jugador:
         clave_personaje = Configuracion().personaje_jugador
         self.sprites = cargar_sprites_direccionales(clave_personaje, int(TAM_CASILLA * 1.6))
         self.direccion = "frente"
+        self.frame_animacion = 0  # índice del frame de caminata actual
 
         # EstadisticasJugador (patrón Observer, ver patterns/observer/)
         # es la única fuente de verdad para vidas/escudos/llaves. El HUD
@@ -82,6 +83,13 @@ class Jugador:
 
         self.x = nuevo_x
         self.y = nuevo_y
+        # Avanza al siguiente frame de caminata (ciclo: 0,1,2,3,0,1,...)
+        # de la dirección en la que está mirando ahora. Si el personaje
+        # no tiene animación cargada (fallback de un solo frame), esto
+        # simplemente se queda siempre en 0.
+        cantidad_frames = len(self.sprites[self.direccion])
+        self.frame_animacion = (self.frame_animacion + 1) % cantidad_frames
+
         return True
 
     def activar_efecto_temporal(self, nombre, duracion_ms):
@@ -128,7 +136,8 @@ class Jugador:
         return mapa[self.y][self.x] == "S"
 
     def dibujar(self, pantalla):
-        sprite = self.sprites[self.direccion]
+        frames = self.sprites[self.direccion]
+        sprite = frames[self.frame_animacion % len(frames)]
         x_centro = self.x * TAM_CASILLA + TAM_CASILLA // 2
         y_pie = self.y * TAM_CASILLA + TAM_CASILLA
 
