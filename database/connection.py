@@ -8,8 +8,8 @@ load_dotenv()
 def _obtener_variable(*nombres_posibles):
     """Busca la primera variable de entorno que exista entre varios
     nombres posibles. Esto evita que el proyecto se rompa porque cada
-    integrante nombró su .env con una convención distinta (DB_PORT vs
-    MYSQL_PORT, DB_NAME vs DB_DATABASE, etc.)."""
+    integrante nombró su .env de manera diferente.
+    """
     for nombre in nombres_posibles:
         valor = os.getenv(nombre)
         if valor is not None and valor != "":

@@ -126,7 +126,8 @@ class Cazador:
                     nuevo_x < len(mapa[0])
                 ):
 
-                    if mapa[nuevo_y][nuevo_x] != "#":  #Asegura de que la nueva posición no sea una pared
+                    
+                    if mapa[nuevo_y][nuevo_x] not in ("#", "D"):  #Asegura de que la nueva posición no sea una pared ni una compuerta cerrada
 
                         if (nuevo_x, nuevo_y) not in visitados:  #Asegura de que la nueva posición no haya sido visitada previamente
 
@@ -135,13 +136,7 @@ class Cazador:
                                 actual_y     #Gracias a esto, se puede reconstruir el camino desde el objetivo hasta la posición inicial
                             )
 
-                            # OJO: este append tiene que estar DENTRO del "if not in
-                            # visitados" (acá adentro), no afuera. Si no, una celda ya
-                            # visitada se vuelve a meter en la cola cada vez que otro
-                            # vecino la toca, y en un mapa con zonas abiertas eso crece
-                            # exponencialmente hasta explotar la memoria (esto pasaba
-                            # antes y no se notaba en el nivel 1 porque era chico y muy
-                            # angosto; en los niveles más abiertos/grandes sí explota).
+                            
                             cola.append(
                                 (nuevo_x, nuevo_y)
                             )
