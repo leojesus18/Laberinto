@@ -10,6 +10,8 @@ from patterns.observer.hud import HUD
 from database.item_repository import ItemRepository
 from patterns.singleton.configuracion import Configuracion
 from patterns.command.comandos_jugando import ComandoMover, ComandoPausar, ComandoEquiparEscudo
+from tiles_laberinto import obtener_tile, color_respaldo
+from decoraciones import DECORACIONES_POR_NIVEL, dibujar_decoraciones
 
 
 class EstadoJugando(Estado):
@@ -186,6 +188,15 @@ class EstadoJugando(Estado):
     def dibujar(self, pantalla):
         pantalla.fill(NEGRO)
 
+        # El mapa se arma en una "hoja" del tamaño exacto del laberinto
+        # (cada nivel mide distinto), se agranda para ocupar la mayor
+        # parte posible de la pantalla SIN deformar las casillas
+        # (misma escala en x e y), y se centra en la ventana.
+        ancho_mapa = len(self.mapa[0]) * TAM_CASILLA
+        alto_mapa = len(self.mapa) * TAM_CASILLA
+        hoja_mapa = pygame.Surface((ancho_mapa, alto_mapa))
+        hoja_mapa.fill(NEGRO)
+
         for fila in range(len(self.mapa)):
             for columna in range(len(self.mapa[fila])):
                 caracter = self.mapa[fila][columna]
@@ -197,20 +208,41 @@ class EstadoJugando(Estado):
                     TAM_CASILLA
                 )
 
-                if caracter == "#":
-                    pygame.draw.rect(pantalla, GRIS, rect)
-                elif caracter == "S":
-                    pygame.draw.rect(pantalla, VERDE, rect)
-                elif caracter == "D":
-                    pygame.draw.rect(pantalla, MARRON_OSCURO, rect)
+                tile = obtener_tile(caracter, TAM_CASILLA)
+
+                if tile is not None:
+                    hoja_mapa.blit(tile, rect)
                 else:
-                    pygame.draw.rect(pantalla, BLANCO, rect)
+                    # Respaldo: si todavía falta el archivo de imagen
+                    # para este tile, se dibuja el color de siempre así
+                    # el juego sigue siendo jugable mientras se van
+                    # subiendo las imágenes.
+                    pygame.draw.rect(hoja_mapa, color_respaldo(caracter), rect)
+
+        # Decoraciones: capa puramente visual, se dibuja DESPUÉS del
+        # piso/paredes (para quedar encima) pero ANTES de items y
+        # personajes (para quedar detrás de ellos, como el mobiliario
+        # de fondo). Nunca participa de la colisión.
+        decoraciones_nivel = DECORACIONES_POR_NIVEL.get(self.indice_nivel, [])
+        dibujar_decoraciones(hoja_mapa, decoraciones_nivel, TAM_CASILLA)
 
         for item in self.items:
-            item.dibujar(pantalla)
+            item.dibujar(hoja_mapa)
 
-        self.jugador.dibujar(pantalla)
-        self.cazador.dibujar(pantalla)
+        self.jugador.dibujar(hoja_mapa)
+        self.cazador.dibujar(hoja_mapa)
+
+        # Escalar manteniendo proporción: se usa el menor de los dos
+        # factores (ancho/alto) para que el mapa entre completo sin
+        # recortarse ni deformarse.
+        escala = min(ANCHO / ancho_mapa, ALTO / alto_mapa)
+        ancho_final = int(ancho_mapa * escala)
+        alto_final = int(alto_mapa * escala)
+        hoja_mapa = pygame.transform.smoothscale(hoja_mapa, (ancho_final, alto_final))
+
+        offset_x = (ANCHO - ancho_final) // 2
+        offset_y = (ALTO - alto_final) // 2
+        pantalla.blit(hoja_mapa, (offset_x, offset_y))
 
         self.hud.dibujar(pantalla)  # HUD: se dibuja con lo que le llegó por notificación, no lee nada acá
 

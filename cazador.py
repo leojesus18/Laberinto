@@ -3,6 +3,7 @@ from constantes import *
 from collections import deque
 from patterns.singleton.configuracion import Configuracion
 from patterns.strategy.estrategia_cazador import obtener_estrategia_para_nivel
+from sprites_personajes import cargar_sprites_direccionales, direccion_segun_movimiento
 
 class Cazador:
 
@@ -12,6 +13,11 @@ class Cazador:
         self.y = y
         self.color = ROJO
         self.contador = 0
+
+        clave_cazador = Configuracion().personaje_cazador
+        self.sprites = cargar_sprites_direccionales(clave_cazador, int(TAM_CASILLA * 1.6))
+        self.direccion = "frente"
+        self.frame_animacion = 0  # índice del frame de caminata actual
 
         config = Configuracion()
 
@@ -50,20 +56,26 @@ class Cazador:
 
             siguiente_x, siguiente_y = camino[1]
 
+            dx = siguiente_x - self.x
+            dy = siguiente_y - self.y
+            self.direccion = direccion_segun_movimiento(dx, dy, self.direccion)
+
             self.x = siguiente_x
             self.y = siguiente_y
 
-    def dibujar(self, pantalla):
+            cantidad_frames = len(self.sprites[self.direccion])
+            self.frame_animacion = (self.frame_animacion + 1) % cantidad_frames
 
-        pygame.draw.circle(
-            pantalla,
-            self.color,
-            (
-                self.x * TAM_CASILLA + TAM_CASILLA // 2,
-                self.y * TAM_CASILLA + TAM_CASILLA // 2
-            ),
-            TAM_CASILLA // 3
-        )
+    def dibujar(self, pantalla):
+        frames = self.sprites[self.direccion]
+        sprite = frames[self.frame_animacion % len(frames)]
+        x_centro = self.x * TAM_CASILLA + TAM_CASILLA // 2
+        y_pie = self.y * TAM_CASILLA + TAM_CASILLA
+
+        pantalla.blit(sprite, (
+            x_centro - sprite.get_width() // 2,
+            y_pie - sprite.get_height()
+        ))
 
 
     def atrapo_jugador(self, jugador_x, jugador_y):

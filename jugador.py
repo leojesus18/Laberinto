@@ -6,6 +6,8 @@ from patterns.decorador.comportamiento_movimiento import (
     DecoradorLentitud,
     DecoradorInvertido,
 )
+from patterns.singleton.configuracion import Configuracion
+from sprites_personajes import cargar_sprites_direccionales, direccion_segun_movimiento
 
 
 class Jugador:
@@ -14,6 +16,11 @@ class Jugador:
         self.x = x
         self.y = y
         self.color = AZUL
+
+        clave_personaje = Configuracion().personaje_jugador
+        self.sprites = cargar_sprites_direccionales(clave_personaje, int(TAM_CASILLA * 1.6))
+        self.direccion = "frente"
+        self.frame_animacion = 0  # índice del frame de caminata actual
 
         # EstadisticasJugador (patrón Observer, ver patterns/observer/)
         # es la única fuente de verdad para vidas/escudos/llaves. El HUD
@@ -47,7 +54,9 @@ class Jugador:
 
     def _mover_una_casilla(self, mapa, dx, dy):
        #Mueve una sola casilla si es posible. Devuelve True si se
-       #movió (útil para el buff de velocidad, que encadena 2 pasos)."""
+       #movió (útil para el buff de velocidad, que encadena 2 pasos)
+
+        self.direccion = direccion_segun_movimiento(dx, dy, self.direccion)
 
         nuevo_x = self.x + dx
         nuevo_y = self.y + dy
@@ -74,6 +83,13 @@ class Jugador:
 
         self.x = nuevo_x
         self.y = nuevo_y
+        # Avanza al siguiente frame de caminata (ciclo: 0,1,2,3,0,1,...)
+        # de la dirección en la que está mirando ahora. Si el personaje
+        # no tiene animación cargada (fallback de un solo frame), esto
+        # simplemente se queda siempre en 0.
+        cantidad_frames = len(self.sprites[self.direccion])
+        self.frame_animacion = (self.frame_animacion + 1) % cantidad_frames
+
         return True
 
     def activar_efecto_temporal(self, nombre, duracion_ms):
@@ -120,12 +136,12 @@ class Jugador:
         return mapa[self.y][self.x] == "S"
 
     def dibujar(self, pantalla):
-        pygame.draw.circle(
-            pantalla,
-            self.color,
-            (
-                self.x * TAM_CASILLA + TAM_CASILLA // 2,
-                self.y * TAM_CASILLA + TAM_CASILLA // 2
-            ),
-            TAM_CASILLA // 3
-        )
+        frames = self.sprites[self.direccion]
+        sprite = frames[self.frame_animacion % len(frames)]
+        x_centro = self.x * TAM_CASILLA + TAM_CASILLA // 2
+        y_pie = self.y * TAM_CASILLA + TAM_CASILLA
+
+        pantalla.blit(sprite, (
+            x_centro - sprite.get_width() // 2,
+            y_pie - sprite.get_height()
+        ))

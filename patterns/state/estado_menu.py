@@ -31,6 +31,13 @@ class EstadoMenu(Estado):
         self.opcion_seleccionada = 0
         self.mostrando_ayuda = False
 
+        # Al entrar al menú desde cualquier lado (portada, pausa, game
+        # over, etc.) nos aseguramos de que suene la música de menú,
+        # aunque en ese momento estuviera sonando la del laberinto.
+        from patterns.singleton.sound_manager import SoundManager
+        sonido = SoundManager()
+        sonido.reproducir_musica(sonido.musica_menu)
+
     def manejar_eventos(self, eventos):
         from patterns.singleton.sound_manager import SoundManager
         sonido = SoundManager()
@@ -74,8 +81,6 @@ class EstadoMenu(Estado):
 
     def dibujar(self, pantalla):
         pantalla.blit(self.fondo, (0, 0))
-
-        self._dibujar_titulo(pantalla)
 
         if self.mostrando_ayuda:
             self._dibujar_ayuda(pantalla)
